@@ -1,4 +1,12 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <chrono>
+#include <stack>
+#include <queue>
+#include <utility>
+#include <string>
+#include <vector>
 
 /* Implementacao para o T2 de AA-2018.2
  * Francisco & Lauro
@@ -86,7 +94,7 @@ struct Graph {
     }
    
     // Pegar qualquer no ativo. O(n^2 * m)
-    CAP generic_preflow_push()
+    CAP fifo_preflow_push()
     {
         preprocess(); 
         
@@ -141,11 +149,16 @@ struct Graph {
 
 };
 
-Graph<double> parseGraph(const string filename)
+inline void solver(const string filename, const string methodName)
 {
     ifstream in(filename);
+    string outputFileName = methodName;
     int nodes, edges, S, T;
     in >> nodes >> edges;
+    outputFileName += "results";
+    outputFileName += ".csv";
+    ofstream out(outputFileName);
+    out << "Tamanho da Instancia," << "Tempo em ms," << "Fluxo encontrado" << endl;
     in >> S >> T;
     --S; --T; // indexing from 0
     Graph<double> G(nodes, S, T);
@@ -158,15 +171,22 @@ Graph<double> parseGraph(const string filename)
         G.addArc(v - 1, u - 1, c);
     }
     in.close();
-    return G;
+    // Fim da leitura do grafo
+    chrono::high_resolution_clock::time_point START = chrono::high_resolution_clock::now();
+    double flow = G.fifo_preflow_push();
+    chrono::high_resolution_clock::time_point END   = chrono::high_resolution_clock::now(); 
+    chrono::duration< double, milli > totalDuration = (END - START);
+    out << nodes << "," << totalDuration.count() << "," << flow << endl;
+    cerr << "Elapsed Time = " << totalDuration.count() << "ms" << endl;
+    cerr  << "MaxFlow = " << flow << endl;
+    
+    out.close();
 }
 
 int main()
 {
-    string filename = "elist1440.rmf";
-    auto testGraph = parseGraph( filename );
-    auto x = testGraph.generic_preflow_push();
-    cout << " flow = " << x << endl;
-
+    vector<string> filenames = { "elist96.rmf", "elist160.rmf", "elist200.rmf", "elist500.rmf", "elist640.rmf", "elist960.rmf", "elist1440.rmf", "elist2560.rmf" };
+    string method   = "fifo_preflow_push_";
+    for(const auto& filename : filenames) solver( filename, method );
     return 0;
 }
