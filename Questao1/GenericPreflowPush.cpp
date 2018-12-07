@@ -5,14 +5,13 @@
  */
 
 #define sz(x) (int) (x).size()
-#define debug(x) if(debug) x
+
 using namespace std;
 
-constexpr bool debug = true;
 constexpr double eps = 1e-8;
 
 template < typename T = double > 
-int cmp_double(T a, T b, double TOL = eps )
+inline int cmp_double(const T a, const T b, double TOL = eps )
 {
     if( a + TOL > b) {
         if(b + TOL > a) return 0;
@@ -32,7 +31,7 @@ struct Graph {
     vector< CAP > capacities, flow, excess; 
     
     CAP residual_cap(int idx) { return capacities[idx] - flow[idx]; }
-    int inv( int a ) { return a ^ 1; }
+    inline int inv( int a ) { return a ^ 1; }
     
     Graph(int n, int source, int sink) : nodes(n), S(source), T(sink) 
     {
@@ -81,8 +80,8 @@ struct Graph {
         fill( dist.begin(), dist.end(), 0);
         fill( excess.begin(), excess.end(), 0);
         fill( flow.begin(), flow.end(), 0);
-        //dist[T] = 0;
-        //find_distances( T );
+        dist[T] = 0;
+        find_distances( T );
         dist[S] = nodes;
     }
    
@@ -106,30 +105,28 @@ struct Graph {
         auto pushRelabel = [&] (int node)
         {
             bool found_admissible_arc = false;
-            //debug( cout << " push relabel do no = " << node << endl; )
             for(const int idx : outgoing_edges[node])
             {
                 int adj = dest[idx];
                 if( dist[node] != dist[adj] + 1 ) continue;
                 CAP send = min( excess[node], residual_cap(idx) );
-                if( send > 0)
+                if( cmp_double( send, 0.0 ) == 1 )
                 {
                     flow[idx] += send;
                     flow[inv(idx)] -= send;
                     excess[ node ] -= send;
-                    excess[adj] += send;
+                    excess[ adj ] += send;
                     if( cmp_double<double>( excess[adj], send ) == 0 && (adj != S && adj != T) ) active_nodes.push( adj );
                     if( cmp_double<double>( excess[node], 0 ) == 1) active_nodes.push( node ); 
                     found_admissible_arc = true;
                     break;
                 }
             }
-            //debug( cout << ( found_admissible_arc ? "Achou" : "Nao achou" ) << endl;)
             
             if( found_admissible_arc == false ) 
             {
                 dist[node] += 1;
-                active_nodes.push(node);
+                if( cmp_double<double>( excess[node], 0) == 1 ) active_nodes.push(node);
             }
         };
         
@@ -137,21 +134,11 @@ struct Graph {
         {
             int fst = active_nodes.front();
             active_nodes.pop();
-            debug( cout << fst << " " << dist[fst] << " " << excess[fst] << endl;)
             pushRelabel(fst);     
         }
         return excess[T];
     }
 
-    void printAllEdges()
-    {
-        for(int i = 0; i < sz(dest); ++i)
-            cout << dest[i] << " " << dest[inv(i)] << " " << flow[i] << endl;
-    }
-
-    void printAllExcess() {
-        for(int i = 0; i < nodes; ++i) if(excess[i] > 0)  printf("i = %d, excess[%d] = %.5lf, d[%d] = %d\n", i, i, excess[i], i, dist[i] );
-    }
 };
 
 Graph<double> parseGraph(const string filename)
@@ -162,7 +149,6 @@ Graph<double> parseGraph(const string filename)
     in >> S >> T;
     --S; --T; // indexing from 0
     Graph<double> G(nodes, S, T);
-    debug( cout << nodes << " " << edges << " " << S << " " << T << endl; )
     for(int i = 0; i < edges; ++i)
     {
         int u, v;
@@ -177,10 +163,9 @@ Graph<double> parseGraph(const string filename)
 
 int main()
 {
-    string filename = "elist96.rmf";
+    string filename = "elist1440.rmf";
     auto testGraph = parseGraph( filename );
     auto x = testGraph.generic_preflow_push();
-    debug(testGraph.printAllExcess() );
     cout << " flow = " << x << endl;
 
     
