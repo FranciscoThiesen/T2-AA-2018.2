@@ -66,14 +66,14 @@ struct grafo
         adjList[ dest ].emplace( c, orig);
     }
     
-    inline void ordenaArestas() {
+    void ordenaArestas() {
         sort( arestas.begin(), arestas.end(), [] (const aresta& a, const aresta& b) { 
                 return a.custo < b.custo; } );
     }
     
     long long bestGlobalAnswer = inf;
     // Removendo a maior aresta pra garantir que é uma relaxacao
-    inline long long relaxation(const deque<bool> verticesAtivos ) {
+    long long relaxation(const deque<bool> verticesAtivos ) {
         long long COST = 0LL;
         long long largestEdge = 0LL;
         for(int v = 0; v < numeroDeNos; ++v) {
@@ -91,28 +91,18 @@ struct grafo
         return COST - largestEdge;
     }
     
-    inline long long doit()
+    long long doit()
     {
         ordenaArestas();
         branch_and_bound(verticesTerminais);
         return bestGlobalAnswer;
     }
     
-    inline void branch_and_bound( deque<bool>& verticesAtivos ) {
+    void branch_and_bound( deque<bool>& verticesAtivos ) {
         long long V = relaxation( verticesAtivos );
         // Se entrar no if, eh porque temos esperancas de melhorar a resposta atual
         if( V < bestGlobalAnswer) {
-            long long val = MST(verticesAtivos);
-            if(val < bestGlobalAnswer) 
-            {
-                bestGlobalAnswer = val;
-                for(int i = 0; i < numeroDeNos; ++i)
-                {
-                    if(verticesAtivos[i]) cerr << i << " ";
-                }
-                cerr << endl;
-                cerr << "novaAns = " << val << endl;
-            }
+            bestGlobalAnswer  = min( bestGlobalAnswer, MST(verticesAtivos) );
         }
         for(int i = 0; i < numeroDeNos; ++i)
         {
@@ -126,7 +116,7 @@ struct grafo
     }
     
     // Acha a MST de um conjunto, se existir
-    inline long long MST(deque<bool>& verticesAtivos)
+    long long MST(deque<bool>& verticesAtivos)
     {
         unionFind UF(numeroDeNos);
         int quantidadeDeArestasDaSolucao = 0;
@@ -157,28 +147,23 @@ struct grafo
 
 int main()
 {
-    ifstream in("B/b02.stp");
-    int nodes, edges;
-    in >> nodes >> edges;
-    grafo g(nodes);
-    cout << nodes << " " << edges << endl;
-    for(int i = 0; i < edges; ++i)
-    {
-        int a, b; long long c;
-        in >> a >> b >> c;
-        --a;--b;
-        g.adicionaAresta(a, b, c);
-    }
-    vector<int> indicesTerminais;
-    int qnt;
-    in >> qnt;
-    for(int i = 0; i < qnt; ++i)
-    {
-        int indiceTerminal;
-        in >> indiceTerminal;
-        indicesTerminais.push_back(indiceTerminal - 1);
-    }
-    g.definirNosTerminais( indicesTerminais );
+    // Vou testar com um grafo pequeno pra garantir que esta funcionando
+    // Vou testar um caso que sei a resposta
+    // Basicamente vou botar todos os nos como nos terminais e a resposta
+    // tem que ser igual ao custo da Arvore geradora minima
+    grafo g(5);
+
+    std::vector<int> terminais = {0, 1, 2, 3, 4};
+    g.definirNosTerminais( terminais );
+
+    g.adicionaAresta(0, 1, 10);
+    g.adicionaAresta(0, 1, 20);
+    g.adicionaAresta(1, 2, 10);
+    g.adicionaAresta(2, 3, 10);
+    g.adicionaAresta(3, 4, 10);
+    
+    // Claramente a árvore geradora minima tem que ter custo 40, e a arvore de Steiner encontrada deveria ter o mesmo valor
+
     cout << g.doit() << endl;
 
     return 0;

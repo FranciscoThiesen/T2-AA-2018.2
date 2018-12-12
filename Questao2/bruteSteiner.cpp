@@ -92,7 +92,7 @@ struct grafo
         
         long long mascaraMaxima = (1LL << numeroDeNos) - 1; // 0x11111111, um 1 para cada no
         
-        long long melhorResposta = 0x3f3f3f3f3f3f3f3fLL; // Constante grande inicial -> "infinito"
+        long long melhorResposta = 0x3f3f3f3f3f3f3fLL; // Constante grande inicial -> "infinito"
         
         
         // Agora, para todo conjunto que contiver todos os nós terminais, vamos

@@ -149,44 +149,41 @@ struct Graph {
 
 };
 
-inline void solver(const string filename, const string methodName)
-{
-    ifstream in(filename);
-    string outputFileName = methodName;
-    int nodes, edges, S, T;
-    in >> nodes >> edges;
-    outputFileName += "results";
-    outputFileName += ".csv";
-    ofstream out(outputFileName);
-    out << "Tamanho da Instancia," << "Tempo em ms," << "Fluxo encontrado" << endl;
-    in >> S >> T;
-    --S; --T; // indexing from 0
-    Graph<double> G(nodes, S, T);
-    for(int i = 0; i < edges; ++i)
-    {
-        int u, v;
-        double c;
-        in >> u >> v >> c;
-        G.addArc(u - 1, v - 1, c);
-        G.addArc(v - 1, u - 1, c);
-    }
-    in.close();
-    // Fim da leitura do grafo
-    chrono::high_resolution_clock::time_point START = chrono::high_resolution_clock::now();
-    double flow = G.generic_preflow_push();
-    chrono::high_resolution_clock::time_point END   = chrono::high_resolution_clock::now(); 
-    chrono::duration< double, milli > totalDuration = (END - START);
-    out << nodes << "," << totalDuration.count() << "," << flow << endl;
-    cerr << "Elapsed Time = " << totalDuration.count() << "ms" << endl;
-    cerr  << "MaxFlow = " << flow << endl;
-    
-    out.close();
-}
-
 int main()
 {
+    string outputFilename = "generic_preflow_push_undirected_results.csv";
+    ofstream out(outputFilename); 
+    out << "Numero de nos," << "Numero de arestas," << "Tempo em ms," << "Fluxo encontrado" << endl;
     vector<string> filenames = { "elist96.rmf", "elist160.rmf", "elist200.rmf", "elist500.rmf", "elist640.rmf", "elist960.rmf", "elist1440.rmf", "elist2560.rmf" };
-    string method   = "generic_preflow_push_";
-    for(const auto& filename : filenames) solver( filename, method );
+    
+    auto solver = [&] (const string filename )
+    {
+        ifstream in(filename);
+        int nodes, edges, S, T;
+        in >> nodes >> edges;
+        in >> S >> T;
+        --S; --T; // indexing from 0
+        Graph<double> G(nodes, S, T);
+        for(int i = 0; i < edges; ++i)
+        {
+            int u, v;
+            double c;
+            in >> u >> v >> c;
+            G.addArc(u - 1, v - 1, c);
+            G.addArc(v - 1, u - 1, c); //-> Tirar o comentario caso seja não-direcionado
+        }
+        in.close();
+        // Fim da leitura do grafo
+        chrono::high_resolution_clock::time_point START = chrono::high_resolution_clock::now();
+        double flow = G.generic_preflow_push();
+        chrono::high_resolution_clock::time_point END   = chrono::high_resolution_clock::now(); 
+        chrono::duration< double, milli > totalDuration = (END - START);
+        out << nodes << "," << 2 * edges << "," << totalDuration.count() << "," << flow << endl;
+        cerr << "Elapsed Time = " << totalDuration.count() << "ms" << endl;
+        cerr  << "MaxFlow = " << flow << endl;
+    };
+    
+    for(const auto& filename : filenames) solver( filename );
+    out.close();
     return 0;
 }
