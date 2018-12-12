@@ -4,7 +4,7 @@
 #include <utility>
 #include <numeric>
 
-
+using namespace std;
 
 /* Implementacao pessoal de Union-Find para usar no Kruskal
  * uso ha um tempo essa implementacao para resolver problemas da maratona
@@ -18,7 +18,7 @@ struct unionFind
     {
         parent.resize(n);
         rank.assign(n, 0);
-        std::iota( parent.begin(), parent.end() , 0); 
+        iota( parent.begin(), parent.end() , 0); 
     }
     
     int findParent(int v)
@@ -30,7 +30,7 @@ struct unionFind
     bool unite(int a, int b)
     {
         a = findParent(a), b = findParent(b);
-        if(a == b) return false; // eles ja sao do mesmo cluster
+        if(a == b) return false;
         if( rank[a] < rank[b]) parent[a] = b;
         else parent[b] = a;
         rank[a] += ( rank[a] == rank[b]);
@@ -39,11 +39,8 @@ struct unionFind
 };
 
 
-/* Codigo para dar uma ideia do approach brute-force / backtrack
- * Como esse programa só vai fazer sentido para grafos com <= 32 nós, vou usar
- * bitmask para alguns detalhes da implementacao 
- */
-
+// Esse codigo so funciona para N <= 32
+// Como a complexidade é O( M * 2^(N) ), não faz muito sentido resolver com bruteforce instancias maiores que 32
 struct aresta 
 {
     int origem, destino, custo;
@@ -54,29 +51,21 @@ struct grafo
 {
     int numeroDeNos;
     long long mascaraTerminal = 0;
-    std::vector< aresta > arestas;
+    vector< aresta > arestas;
 
     grafo(int N) : numeroDeNos(N) {} 
     
-    // Lembrar que os indices dos nós pertencem ao intervalo [0, numeroDeNos - 1]
     void definirNosTerminais( std::vector<int> indicesDosNosTerminais )
     {
         mascaraTerminal = 0LL; // Resetando a mascara de nos
         for(const int& indice : indicesDosNosTerminais)
         {
-            if( indice > 31)
+            if( indice >= 31)
             {
-                std::cout << "Essa instancia é grande demais para ser rodada com backtrack" << std::endl;
+                cout << "Essa instancia é grande demais para ser rodada com backtrack" << std::endl;
                 exit(-1);
             }
-            else
-            {
-                mascaraTerminal |= (1LL << indice );
-                // Digamos que estamos adicionando o vertice de indice 0 do grafo na mascara
-                // Ela vai ficar assim = 0x0000000000000000000....0000001
-                // Vamos ter 0 para os vertices que nao pertencem ao conjunto de nos terminais
-                // e 1 para os vertices que pertecem ao conjunto de nos terminais
-            }
+            else mascaraTerminal |= (1LL << indice );
         }
     }
     
@@ -90,22 +79,20 @@ struct grafo
      */
     void ordenaArestas()
     {
-        std::sort( arestas.begin(), arestas.end(), [] (const aresta& a, const aresta& b) { 
+        sort( arestas.begin(), arestas.end(), [] (const aresta& a, const aresta& b) { 
                 return a.custo < b.custo; } );
     }
     
     // Acha o custo da melhor solução que contem os nos terminais definidos a priori
     long long bruteforce()
     {
-        ordenaArestas(); // esse procedimento so deve ser feito uma vez
+        ordenaArestas();
         
-        // Chamei forca bruta
-        std::cout << "mascaraTerminais = " << mascaraTerminal << std::endl;
+        cout << "mascaraTerminais = " << mascaraTerminal << std::endl;
         
-        long long mascaraMaxima = (1LL << numeroDeNos) - 1;
+        long long mascaraMaxima = (1LL << numeroDeNos) - 1; // 0x11111111, um 1 para cada no
         
-        long long melhorResposta = 0x3f3f3f3f3f3f3f3fLL; // Constante grande inicial
-        // Mascara maxima equivale ao subconjunto que engloba todos os nós
+        long long melhorResposta = 0x3f3f3f3f3f3f3f3fLL; // Constante grande inicial -> "infinito"
         
         
         // Agora, para todo conjunto que contiver todos os nós terminais, vamos
@@ -113,16 +100,7 @@ struct grafo
         // do problema
         for(long long conjunto = 0LL; conjunto <= mascaraMaxima; ++conjunto)
         {
-            // Vamos testar se esse conjunto contem os vertices terminais
-            // O que vamos fazer aqui é um and bitwise entre o conjunto e a mascara de nos terminais.
-            //
-            // Suponha por exemplo: conjunto = 0x00001011
-            //               mascaraterminal = 0x00001010
-            //
-            //  conj & mask                  = 0x00001010
-            //  Conclusão, se o and de um com o outro for igual a mascaraTerminal
-            //  entao quer dizer que o conjunto contem todos os nós da máscaraTerminal 
-            //  em outras palavras, é um conjunto válido e vamos tentar achar a Árvore geradora mínima pra ele.
+            // Para entrar no if, o subconjunto de nós sendo testado precisa necessariamente conter todos os nós terminais
             if( (conjunto & mascaraTerminal) == mascaraTerminal)
             {
                 // entao temos um conjunto valido
@@ -130,6 +108,7 @@ struct grafo
                 int quantidadeDeArestasDaSolucao = 0;
                 long long custoDaSolucao = 0LL;
 
+                // Nesse loop, iteramos por todas as arestas e realizamos as operacoes do Kruskal
                 for(const aresta& x : arestas )
                 {
                     // vamos checar se essa aresta une dois vertices que estao no nosso conjunto
@@ -138,14 +117,11 @@ struct grafo
                     
                     if( contemOrigem && contemDestino )
                     {
-                        // Se consegui juntar os dois vertices, quer dizer que
-                        // vale a pena colocar essa aresta na solucao
                         if( UF.unite( x.origem, x.destino )  == true)
                         {
                             quantidadeDeArestasDaSolucao += 1;
                             custoDaSolucao += x.custo;
                         }
-                    
                     }
                 }
                 /* Se temos N vértices no conjunto, temos que nos certificar de que 
@@ -153,14 +129,9 @@ struct grafo
                  * existir o caso que nao existe uma árvore contendo todos os vertices
                  * do conjunto e apenas eles.
                  */
-                int numeroDeVerticesNoConjunto = __builtin_popcountll( conjunto );
-                // esse popcnt basicamente conta o numero de bits iguais a 1 em um inteiro ou long long
+                int numeroDeVerticesNoConjunto = __builtin_popcountll( conjunto ); // Essa instrucao conta os 1's de um long long
             
-                if( quantidadeDeArestasDaSolucao + 1 == numeroDeVerticesNoConjunto)
-                {
-                    // Entao temos uma solucao valida
-                    melhorResposta = std::min( melhorResposta, custoDaSolucao );
-                }
+                if( quantidadeDeArestasDaSolucao + 1 == numeroDeVerticesNoConjunto) melhorResposta = min( melhorResposta, custoDaSolucao );
             }
         }
         return melhorResposta;

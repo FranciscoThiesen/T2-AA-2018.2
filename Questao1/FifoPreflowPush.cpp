@@ -158,7 +158,7 @@ inline void solver(const string filename, const string methodName)
     outputFileName += "results";
     outputFileName += ".csv";
     ofstream out(outputFileName);
-    out << "Tamanho da Instancia," << "Tempo em ms," << "Fluxo encontrado" << endl;
+    //out << "Tamanho da Instancia," << "Tempo em ms," << "Fluxo encontrado" << endl;
     in >> S >> T;
     --S; --T; // indexing from 0
     Graph<double> G(nodes, S, T);
@@ -176,7 +176,7 @@ inline void solver(const string filename, const string methodName)
     double flow = G.fifo_preflow_push();
     chrono::high_resolution_clock::time_point END   = chrono::high_resolution_clock::now(); 
     chrono::duration< double, milli > totalDuration = (END - START);
-    out << nodes << "," << totalDuration.count() << "," << flow << endl;
+    cout << nodes << "," << totalDuration.count() << "," << flow << endl;
     cerr << "Elapsed Time = " << totalDuration.count() << "ms" << endl;
     cerr  << "MaxFlow = " << flow << endl;
     
